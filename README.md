@@ -1,177 +1,249 @@
-# 🌾 KisanMind — AI Farming Assistant for Indian Farmers
+# 🌾 KisanMind — Multi-Agent AI Farming Assistant for Indian Farmers
 
-KisanMind is a multi-agent AI system built with **Google ADK** and **Gemini 3.5 Flash** (with an automatic **Groq** fallback) that helps Indian farmers with:
+> **An intelligent multi-agent AI platform built with Google ADK that empowers Indian farmers with crop disease diagnosis, market intelligence, weather-aware farming recommendations, and government scheme discovery through collaborative AI agents.**
 
-- 🌿 **Crop Disease Diagnosis** — Upload a photo, get instant diagnosis + treatment
-- 💰 **Mandi Price Intelligence** — Real-time prices from Agmarknet across India
-- 🌤️ **Weather-Based Farming Advice** — 7-day forecasts tailored for farmers
-- 🏛️ **Government Scheme Discovery** — Find PM-KISAN, PMFBY, KCC and more
+![Architecture](images/architecture.png)
 
----
-
-## 🏗️ Architecture
-
-```
-KisanMind Orchestrator (Google ADK)
-├── 🌿 CropDoc Agent          → Gemini Vision (Groq vision fallback) for disease detection
-├── 💰 MarketMind Agent       → Agmarknet mandi prices via data.gov.in
-├── 🌤️ WeatherWatch Agent     → Open-Meteo free weather API
-└── 🏛️ SchemeScout Agent      → Static scheme database (PM-KISAN etc.)
-        ↑
-    MCP Server (3 tools)
-    ├── get_mandi_prices()
-    ├── get_weather_forecast()
-    └── get_schemes()
-```
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Google ADK](https://img.shields.io/badge/Google-ADK-green)
+![Gemini](https://img.shields.io/badge/Google-Gemini_3.5_Flash-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688)
+![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-red)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
-## ⚡ Quick Setup
+# 🚜 Problem Statement
 
-### 1. Clone and install
-```bash
-git clone https://github.com/YOUR_USERNAME/kisanmind.git
-cd kisanmind
-pip install -r requirements.txt
-```
+Over **140 million Indian farmers** face fragmented access to agricultural knowledge.
 
-### 2. Set up API keys
-```bash
-cp .env.example .env
-# Edit .env and add your keys:
-# GOOGLE_API_KEY=...   (from aistudio.google.com)
-# DATA_GOV_API_KEY=... (from data.gov.in)
-# GROQ_API_KEY=...     (optional, from console.groq.com — enables automatic
-#                        fallback if Gemini fails)
-```
+They often struggle with
 
-### 3. Run locally (2 terminals)
+* Identifying crop diseases quickly
+* Finding reliable mandi prices
+* Planning around changing weather
+* Discovering government support schemes
 
-**Terminal 1 — Backend:**
-```bash
-python main.py
-# API running at http://localhost:8000
-```
+Most existing applications solve only **one** of these problems.
 
-**Terminal 2 — Frontend:**
-```bash
-streamlit run app.py
-# UI at http://localhost:8501
-```
+KisanMind brings them together inside **one intelligent multi-agent ecosystem**.
 
 ---
 
-## 🌐 API Endpoints
+# 💡 Solution
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Health check |
-| GET | `/health` | API key status |
-| POST | `/chat` | Main chat endpoint |
-| POST | `/analyze-crop` | Upload image for disease diagnosis |
+KisanMind uses **Google ADK** to orchestrate specialized AI agents that collaborate to answer farmer queries using real-time APIs and multimodal reasoning.
 
-### Chat example:
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What are wheat prices in Punjab today?"}'
+Instead of relying on a single LLM, every request is routed to the most appropriate domain expert.
+
+This results in
+
+* higher accuracy
+* lower latency
+* modular scalability
+* easier maintenance
+
+---
+
+# 🤖 Multi-Agent Architecture
+
+```
+                        User
+
+                         │
+
+                 Google ADK Orchestrator
+
+      ┌──────────────┬──────────────┬──────────────┬──────────────┐
+      │              │              │              │
+ CropDoc       MarketMind      WeatherWatch    SchemeScout
+      │              │              │              │
+Gemini Vision   Agmarknet API   OpenMeteo API   Govt Schemes
+
+                MCP Tool Server
+         ├── Weather Tool
+         ├── Market Tool
+         └── Scheme Tool
 ```
 
 ---
 
-## 🧠 Models & Automatic Fallback
+# ✨ Features
 
-All 5 agents read their model from `agents/llm_config.py`, which itself reads
-from `.env`:
+## 🌿 Crop Disease Diagnosis
 
-| Setting | Default | Purpose |
-|---|---|---|
-| `GEMINI_MODEL` | `gemini-3.5-flash` | Primary chat/text model |
-| `GEMINI_VISION_MODEL` | same as above | CropDoc's image diagnosis model |
-| `GROQ_API_KEY` | _(unset)_ | If set, enables the fallback below |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Fallback chat/text model |
-| `GROQ_VISION_MODEL` | `meta-llama/llama-4-scout-17b-16e-instruct` | Fallback image-diagnosis model |
+* Image upload
+* Gemini Vision reasoning
+* Automatic treatment recommendation
+* Fertilizer suggestions
 
-**How the fallback works:** every request first goes to Gemini. If that call
-errors out (bad/expired key, rate limit, quota exceeded, Google API briefly
-down), and `GROQ_API_KEY` is set, KisanMind automatically retries the exact
-same message on Groq instead of failing — no restart needed. This is a
-per-request retry, not a permanent switch; the next message tries Gemini
-again first. If `GROQ_API_KEY` is left blank, KisanMind behaves exactly as
-before (Gemini-only).
+---
 
-Check `GET /api/health` to see which models are active and whether the
-fallback is currently enabled.
+## 💰 Market Intelligence
 
+* Live Agmarknet prices
+* Nearby mandi comparison
+* Price trends
+* Better selling recommendations
 
+---
 
-1. Create a new Space at [huggingface.co/spaces](https://huggingface.co/spaces)
-2. Choose **Streamlit** SDK
-3. Push your code:
-```bash
-git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/kisanmind
-git push hf main
+## 🌦 Weather Intelligence
+
+* 7-day forecast
+* Crop-specific recommendations
+* Rain alerts
+* Irrigation planning
+
+---
+
+## 🏛 Government Schemes
+
+Automatically finds
+
+* PM-KISAN
+* PMFBY
+* KCC
+* State subsidy programs
+
+---
+
+# 🧠 Agent Collaboration
+
+Rather than answering directly,
+
+the Orchestrator
+
+✔ understands intent
+
+✔ delegates work
+
+✔ combines outputs
+
+✔ produces one unified response
+
+This follows Google's Agent Development Kit design philosophy.
+
+---
+
+# 🔌 MCP Tools
+
+KisanMind demonstrates the **Model Context Protocol (MCP)** using reusable tools.
+
+| Tool         | Purpose            |
+| ------------ | ------------------ |
+| Weather Tool | Weather forecasts  |
+| Market Tool  | Agmarknet prices   |
+| Scheme Tool  | Government schemes |
+
+Every agent accesses shared capabilities through MCP.
+
+---
+
+# 🔄 Automatic LLM Fallback
+
+Primary Model
+
 ```
-4. Add secrets in Space Settings → Variables and Secrets:
-   - `GOOGLE_API_KEY`
-   - `DATA_GOV_API_KEY`
-
----
-
-## 🔑 API Keys Needed
-
-| Key | Where to Get | Cost |
-|-----|-------------|------|
-| `GOOGLE_API_KEY` | [aistudio.google.com](https://aistudio.google.com) | Free |
-| `DATA_GOV_API_KEY` | [data.gov.in](https://data.gov.in) | Free |
-| `GROQ_API_KEY` (optional) | [console.groq.com](https://console.groq.com) | Free tier available |
-| Open-Meteo | No key needed! | Free forever |
-
----
-
-## 📁 Project Structure
-
-```
-kisanmind/
-├── agents/
-│   ├── llm_config.py       # Central model + Groq-fallback config
-│   ├── orchestrator.py     # Routes queries to right agent
-│   ├── cropdoc.py          # Disease diagnosis (Gemini Vision + Groq fallback)
-│   ├── marketmind.py       # Mandi price intelligence
-│   ├── weatherwatch.py     # Weather + farming advice
-│   └── schemescout.py      # Govt scheme finder
-├── mcp_server/
-│   └── tools.py            # 3 MCP tools (weather, prices, schemes)
-├── app.py                  # Streamlit frontend
-├── main.py                 # FastAPI backend
-├── requirements.txt
-├── .env.example            # Safe template (push this)
-├── .gitignore              # .env is always excluded
-└── README.md
+Gemini 3.5 Flash
 ```
 
----
+Fallback
 
-## 🛡️ Security
+```
+Groq
+↓
+Llama 3.3 70B
+```
 
-- All API keys loaded via `python-dotenv` — never hardcoded
-- `.env` excluded from git via `.gitignore`
-- Input validation via Pydantic models
-- File upload size limit: 10MB
-- Accepted image types: JPG, PNG, WebP only
+If Gemini experiences
 
----
+* quota limits
+* API failures
+* temporary downtime
 
-## 🤝 Built With
-
-- [Google ADK](https://google.github.io/adk-docs/) — Multi-agent orchestration
-- [Gemini 3.5 Flash](https://aistudio.google.com) — Vision + language AI
-- [Groq](https://groq.com) + [LiteLLM](https://docs.litellm.ai) — Automatic fallback if Gemini fails
-- [FastAPI](https://fastapi.tiangolo.com) — Backend API
-- [Streamlit](https://streamlit.io) — Frontend UI
-- [Open-Meteo](https://open-meteo.com) — Free weather API
-- [data.gov.in](https://data.gov.in) — Agmarknet mandi prices
+the request automatically retries on Groq without interrupting the user.
 
 ---
 
-*Made with ❤️ for Indian Farmers*
+# 🔒 Security
+
+* Environment variables
+* No API keys in source code
+* Input validation
+* Secure image uploads
+* File size limits
+* MIME validation
+* Pydantic request models
+
+---
+
+# 📦 Tech Stack
+
+### AI
+
+* Google ADK
+* Gemini 3.5 Flash
+* LiteLLM
+* Groq
+
+### Backend
+
+* FastAPI
+* Python
+
+### Frontend
+
+* Streamlit
+
+### APIs
+
+* Open-Meteo
+* data.gov.in (Agmarknet)
+
+### Protocols
+
+* MCP
+
+---
+
+# 🚀 Deployment
+
+Supports deployment on
+
+* Hugging Face Spaces
+* Render
+* Railway
+* Docker
+* Local Machine
+
+---
+
+# 📊 Future Roadmap
+
+* Voice conversations in Hindi
+* Offline edge inference
+* WhatsApp farming assistant
+* Pest outbreak prediction
+* Satellite imagery analysis
+* Personalized crop calendars
+* IoT sensor integration
+
+---
+
+# 🎯 Kaggle AI Agents Course Concepts Demonstrated
+
+| Concept                     | Implementation                     |
+| --------------------------- | ---------------------------------- |
+| ✅ Google ADK                | Multi-Agent Orchestration          |
+| ✅ MCP Server                | Shared Tool Calling                |
+| ✅ Deployability             | FastAPI + Streamlit                |
+| ✅ Security                  | Environment Variables + Validation |
+| ✅ Agent Skills              | Specialized Domain Agents          |
+| ✅ Multi-Agent Collaboration | Intent Routing                     |
+
+
+**Astitva Bhardwaj**
+AI Engineer • Machine Learning • Multi-Agent Systems
+
+

@@ -1,0 +1,12 @@
+google-adk>=1.0.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-dotenv>=1.0.0
+httpx>=0.27.0
+pillow>=10.4.0
+pydantic>=2.9.0
+mcp>=1.0.0
+# Needed for the Groq fallback path (agents/llm_config.py, agents/cropdoc.py).
+# Pinned >=1.83.0: versions 1.82.7 and 1.82.8 had a confirmed supply-chain
+# compromise (flagged in Google ADK's own docs) — don't install those.
+litellm>=1.83.0

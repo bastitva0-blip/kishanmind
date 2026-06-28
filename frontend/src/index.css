@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { -webkit-tap-highlight-color: transparent; }
+  
+  html { 
+    height: 100%;
+    background: #0f1f18;
+  }
+  
+  body {
+    height: 100%;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #root {
+    height: 100%;
+    height: 100dvh;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2d6a4f; border-radius: 4px; }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+  
+  .glass-dark {
+    @apply bg-forest-900/80 backdrop-blur-md border border-forest-700/50;
+  }
+
+  .agent-card {
+    @apply rounded-2xl p-4 border animate-slide-up;
+  }
+
+  .btn-primary {
+    @apply bg-forest-600 hover:bg-forest-500 text-white font-semibold 
+           px-5 py-2.5 rounded-xl transition-all duration-200 
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply bg-white/5 hover:bg-white/10 text-white/80 hover:text-white
+           px-4 py-2 rounded-xl transition-all duration-200 active:scale-95;
+  }
+
+  .input-field {
+    @apply bg-forest-800/60 border border-forest-700/50 text-white 
+           placeholder-forest-400/60 rounded-xl px-4 py-3 w-full
+           focus:outline-none focus:border-forest-500 focus:ring-1 
+           focus:ring-forest-500/50 transition-all duration-200;
+  }
+
+  .nav-tab {
+    @apply flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl
+           transition-all duration-200 cursor-pointer min-w-0 flex-1;
+  }
+
+  .nav-tab.active {
+    @apply bg-forest-700/60 text-forest-300;
+  }
+
+  .nav-tab:not(.active) {
+    @apply text-forest-500 hover:text-forest-400;
+  }
+
+  .thinking-dot {
+    @apply w-2 h-2 rounded-full bg-forest-400;
+    animation: bounce-dot 1.2s ease-in-out infinite;
+  }
+
+  .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  .price-high { @apply text-emerald-400 font-semibold; }
+  .price-low  { @apply text-red-400 font-semibold; }
+  .price-avg  { @apply text-gold-400 font-semibold; }
+
+  .weather-card {
+    @apply glass rounded-2xl p-3 flex flex-col items-center gap-1 
+           min-w-[80px] cursor-default select-none;
+  }
+
+  .scheme-card {
+    @apply glass rounded-2xl p-4 border-l-4 border-forest-500 
+           animate-slide-up cursor-pointer;
+  }
+
+  .severity-badge {
+    @apply text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide;
+  }
+}
+
+/* Scan animation overlay */
+.scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #52b788, #f0a500, #52b788, transparent);
+  animation: scan 2s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(82,183,136,0.8);
+}
+
+/* Voice waveform bars */
+.voice-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: #f0a500;
+  animation: voice-wave 0.6s ease-in-out infinite alternate;
+}
+.voice-bar:nth-child(1) { animation-delay: 0s;    height: 8px; }
+.voice-bar:nth-child(2) { animation-delay: 0.1s;  height: 16px; }
+.voice-bar:nth-child(3) { animation-delay: 0.2s;  height: 24px; }
+.voice-bar:nth-child(4) { animation-delay: 0.15s; height: 20px; }
+.voice-bar:nth-child(5) { animation-delay: 0.05s; height: 12px; }
+
+@keyframes voice-wave {
+  from { transform: scaleY(0.4); opacity: 0.6; }
+  to   { transform: scaleY(1.2); opacity: 1; }
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #52b788, #f0a500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth page transitions */
+.page-enter { animation: slide-up 0.3s ease-out; }
+
+/* Custom scrollbar for chat */
+.chat-scroll { scroll-behavior: smooth; }
+.chat-scroll::-webkit-scrollbar { width: 2px; }

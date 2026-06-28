@@ -2,7 +2,6 @@
 
 > **An intelligent multi-agent AI platform built with Google ADK that empowers Indian farmers with crop disease diagnosis, market intelligence, weather-aware farming recommendations, and government scheme discovery through collaborative AI agents.**
 
-![Architecture](images/architecture.png)
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Google ADK](https://img.shields.io/badge/Google-ADK-green)

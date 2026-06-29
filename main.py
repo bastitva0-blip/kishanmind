@@ -49,9 +49,6 @@ APP_NAME = "kisanmind"
 session_service = InMemorySessionService()
 _runner: Optional[Runner] = None
 
-# Separate session store + runner for the Groq fallback path. Kept distinct
-# from the primary Gemini session_service so a half-failed Gemini run never
-# corrupts state that the fallback run depends on.
 fallback_session_service = InMemorySessionService()
 _fallback_runner: Optional[Runner] = None
 
@@ -110,7 +107,12 @@ class ChatResponse(BaseModel):
 # ─────────────────────────────────────────────
 # ADK runner
 # ─────────────────────────────────────────────
-async def _run_once(runner: Runner, svc: InMemorySessionService, message: str, session_id: str) -> tuple[str, str]:
+async def _run_once(
+    runner: Runner,
+    svc: InMemorySessionService,
+    message: str,
+    session_id: str,
+) -> tuple[str, str]:
     """Run a single message through the given runner/session service."""
     try:
         await svc.create_session(
@@ -141,10 +143,19 @@ async def _run_once(runner: Runner, svc: InMemorySessionService, message: str, s
     return response_text.strip(), agent_name
 
 
-def _is_rate_limit(error: Exception) -> bool:
-    """Check if an error is a rate limit / quota error."""
+def _is_transient_error(error: Exception) -> bool:
+    """
+    Returns True for errors that are worth retrying:
+    - 429 rate limit / quota exhausted
+    - 503 server overload / high demand
+    - Any temporary unavailability
+    """
     s = str(error).lower()
-    return any(k in s for k in ("429", "resource_exhausted", "quota", "too many requests", "rate limit"))
+    return any(k in s for k in (
+        "429", "resource_exhausted", "quota", "too many requests", "rate limit",
+        "503", "unavailable", "high demand", "overloaded", "try again", "temporarily",
+        "server error", "servererror",
+    ))
 
 
 async def run_agent(message: str, session_id: str) -> tuple[str, str]:
@@ -152,7 +163,8 @@ async def run_agent(message: str, session_id: str) -> tuple[str, str]:
     Run the farmer's message through KisanMind.
 
     Strategy:
-      1. Try Gemini up to 3 times with exponential backoff on rate-limit errors.
+      1. Try Gemini up to 3 times with exponential backoff on transient errors
+         (both 429 rate limits AND 503 overload errors).
       2. If all Gemini attempts fail AND GROQ_API_KEY is set, retry once on Groq.
       3. If nothing works, return a friendly error message instead of crashing.
     """
@@ -170,15 +182,14 @@ async def run_agent(message: str, session_id: str) -> tuple[str, str]:
 
         except Exception as e:
             last_error = e
-            if _is_rate_limit(e) and attempt < 2:
+            if _is_transient_error(e) and attempt < 2:
                 wait = 2 ** attempt  # 1s → 2s → give up
                 logger.warning(
-                    "Gemini rate-limited (attempt %d/3) — waiting %ds before retry. Error: %s",
+                    "Gemini transient error (attempt %d/3) — retrying in %ds. Error: %s",
                     attempt + 1, wait, e,
                 )
                 await asyncio.sleep(wait)
                 continue
-            # Non-rate-limit error or final attempt — break out immediately
             logger.error("Gemini call failed (attempt %d/3): %s", attempt + 1, e)
             break
 
@@ -187,8 +198,9 @@ async def run_agent(message: str, session_id: str) -> tuple[str, str]:
     if fallback_runner is not None:
         logger.warning("All Gemini attempts failed — trying Groq fallback (%s).", GROQ_MODEL)
         try:
+            fallback_session_id = f"fallback_{session_id}"
             response_text, agent_name = await _run_once(
-                fallback_runner, fallback_session_service, message, session_id
+                fallback_runner, fallback_session_service, message, fallback_session_id
             )
             if response_text:
                 return response_text, f"{agent_name} (Groq fallback)"
@@ -196,11 +208,10 @@ async def run_agent(message: str, session_id: str) -> tuple[str, str]:
             logger.error("Groq fallback also failed: %s", fallback_error)
 
     # ── Step 3: Friendly error ───────────────────────────────────────────
-    logger.error("All providers failed. Last Gemini error: %s", last_error)
-    if _is_rate_limit(last_error):
+    logger.error("All providers failed. Last error: %s", last_error)
+    if _is_transient_error(last_error):
         return (
-            "⚠️ The AI service is temporarily busy (rate limit reached). "
-            "Please wait a moment and try again.",
+            "⚠️ The AI service is temporarily busy. Please try again in a moment.",
             "KisanMind",
         )
     return (
